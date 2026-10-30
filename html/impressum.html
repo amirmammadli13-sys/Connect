@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impressum – Connect</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f0f2f5;
+            color: #1c1e21;
+            margin: 0;
+            padding: 40px 16px;
+            line-height: 1.55;
+        }
+
+        main {
+            background: white;
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 { font-size: 24px; margin: 0 0 4px; }
+        h2 { font-size: 17px; margin: 28px 0 8px; }
+        .sub { color: #65676b; margin: 0 0 24px; font-size: 14px; }
+
+        a { color: #1877f2; }
+        p { margin: 8px 0; }
+        ul { margin: 8px 0; padding-left: 20px; }
+
+        .back {
+            display: inline-block;
+            margin-top: 28px;
+            color: #1877f2;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .reset {
+            background: #e4e6eb;
+            color: #1c1e21;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+
+        .reset:hover { background: #d8dade; }
+        code { background: #f0f2f5; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Impressum</h1>
+        <p class="sub">Connect – privates Projekt, keine Firma dahinter</p>
+
+        <h2>Verantwortlich</h2>
+        <p>
+            Amir. Kontakt geht am einfachsten über das Profil &ndash; ich bin im
+            Netzwerk als <strong>@amir</strong> angemeldet.
+        </p>
+        <p>
+            Connect ist ein privates Hobbyprojekt. Es gibt kein Impressum im
+            rechtlichen Sinn, weil hier nichts verkauft wird.
+        </p>
+
+        <h2>Worum geht es hier</h2>
+        <p>
+            Connect ist ein kleines soziales Netzwerk zum Ausprobieren: Account anlegen,
+            Beiträge schreiben, liken, kommentieren und anderen Leuten folgen. Der Feed
+            wird für jeden Nutzer unterschiedlich sortiert – Beiträge von Leuten, denen
+            man folgt, und Beiträge mit vielen Reaktionen stehen weiter oben.
+        </p>
+
+        <h2>Kekse</h2>
+        <p>
+            Beim ersten Besuch fragt Connect, ob es dich mit einem Cookie angemeldet halten
+            darf. Sagst du ja, liegt die Sitzung in einem Cookie namens
+            <code>connect_session</code>: nur für diese Seite, für JavaScript nicht lesbar,
+            standardmäßig 30 Tage gültig. Sagst du nein, merkt sich die Seite die Anmeldung
+            im Browser-Speicher. Mehr als diesen einen Keks gibt es nicht – keine Werbung,
+            keine Zählpixel.
+        </p>
+        <button type="button" class="reset" onclick="resetKeks()">Keks-Entscheidung zurücksetzen</button>
+
+        <h2>Was mit den Daten passiert</h2>
+        <ul>
+            <li>Passwörter werden gehasht gespeichert, nicht im Klartext.</li>
+            <li>Es gibt keine Werbung, kein Tracking und keine Weitergabe an Dritte.</li>
+            <li>Die Daten bleiben in der Datenbank der Instanz, auf der du dich angemeldet hast.</li>
+            <li>Das Projekt dient zum Lernen. Trag keine Daten ein, die dir wichtig sind.</li>
+        </ul>
+
+        <h2>Technik</h2>
+        <p>
+            Frontend aus HTML, CSS und JavaScript, Backend mit FastAPI auf Python,
+            Datenbank über SQLAlchemy, davor nginx. Alles läuft in Docker.
+        </p>
+
+        <a class="back" href="index.html">&larr; Zurück zu Connect</a>
+    </main>
+    <script>
+        function resetKeks() {
+            localStorage.removeItem('connect.keks');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

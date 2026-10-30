@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 80px 16px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: #1c1e21;
+        }
+
+        /* Navigation */
+        #mainNav {
+            background-color: #1877f2;
+            padding: 12px 20px;
+            display: none;
+            gap: 22px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        #mainNav .brand {
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        #mainNav a {
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        #mainNav a:hover { text-decoration: underline; }
+
+        #langSwitch {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 4px 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* Seiten */
+        .page-container {
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 560px;
+            text-align: center;
+            display: none;
+        }
+
+        .page-container.active { display: block; }
+
+        h1 { font-size: 26px; margin: 0 0 8px; }
+        h2 { font-size: 15px; font-weight: normal; color: #65676b; margin: 0 0 20px; }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 84px;
+        }
+
+        button {
+            padding: 12px;
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        button:hover { background-color: #145dbf; }
+        button:disabled { background-color: #9db9dd; cursor: default; }
+
+        .btn-block { width: 100%; margin-top: 10px; }
+        .btn-secondary { background-color: #e4e6eb; color: #1c1e21; }
+        .btn-secondary:hover { background-color: #d3d6db; }
+
+        .toggle-link {
+            margin-top: 16px;
+            color: #1877f2;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .muted { color: #65676b; font-style: italic; margin: 14px 0; font-size: 14px; }
+
+        /* Feed */
+        #newPost {
+            background: #f0f2f5;
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        #newPost textarea { margin: 0; background: white; }
+        #newPost button { width: 100%; margin-top: 8px; }
+
+        #feed-list { text-align: left; }
+
+        .post-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 16px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .post-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .avatar {
+            width: 38px;
+            height: 38px;
+            flex: 0 0 38px;
+            border-radius: 50%;
+            background: #1877f2;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .post-author {
+            color: #1877f2;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .post-author:hover { text-decoration: underline; }
+        .post-time { color: #65676b; font-size: 12px; margin-top: 2px; }
+        .post-text { white-space: pre-wrap; margin: 0 0 12px; line-height: 1.45; overflow-wrap: anywhere; }
+
+        .post-actions {
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        .action {
+            background: none;
+            color: #65676b;
+            font-weight: normal;
+            padding: 6px 10px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action:hover { background: #f0f2f5; }
+        .action.liked { color: #e0245e; font-weight: bold; }
+
+        .comments {
+            border-top: 1px solid #eee;
+            margin-top: 10px;
+            padding-top: 10px;
+        }
+
+        .comment {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .comment .avatar { width: 30px; height: 30px; flex: 0 0 30px; font-size: 13px; }
+
+        .comment-body {
+            background: #f0f2f5;
+            border-radius: 10px;
+            padding: 8px 12px;
+            flex: 1;
+        }
+
+        .comment-body strong { color: #1877f2; font-size: 13px; }
+        .comment-body p { margin: 3px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .comment-body small { color: #65676b; font-size: 11px; }
+
+        .comment-form { display: flex; gap: 8px; }
+        .comment-form input { margin: 0; }
+        .comment-form button { width: auto; padding: 0 16px; }
+
+        /* Profil */
+        .profile-head {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            text-align: left;
+            margin-bottom: 16px;
+        }
+
+        .profile-head .avatar { width: 72px; height: 72px; flex: 0 0 72px; font-size: 28px; }
+        .profile-head h1 { margin: 0; }
+        .profile-head .muted { margin: 4px 0 0; font-style: normal; }
+
+        .profile-stats {
+            display: flex;
+            gap: 18px;
+            font-size: 14px;
+            color: #65676b;
+            margin: 12px 0 16px;
+        }
+
+        .profile-stats b { color: #1c1e21; }
+
+        .profile-posts { text-align: left; margin-top: 24px; }
+        .profile-posts h3 { font-size: 16px; margin: 0 0 12px; }
+        .profile-actions { display: flex; gap: 8px; }
+        .profile-actions button { flex: 1; }
+
+        /* Keks-Abfrage beim ersten Besuch */
+        #keksBanner {
+            position: fixed;
+            left: 50%;
+            bottom: 20px;
+            transform: translateX(-50%);
+            width: min(580px, calc(100vw - 32px));
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+            padding: 18px;
+            display: flex;
+            gap: 18px;
+            align-items: center;
+            z-index: 1800;
+        }
+
+        #keksBanner[hidden] { display: none; }
+        #keksBanner p { margin: 0; font-size: 14px; line-height: 1.45; color: #65676b; }
+        #keksBanner strong { display: block; font-size: 15px; color: #1c1e21; margin-bottom: 3px; }
+        .keks-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .keks-actions button { padding: 9px 14px; font-size: 13px; margin: 0; }
+        .keks-actions .leise { background: #e4e6eb; color: #1c1e21; }
+
+        /* Toast statt alert() */
+        #toast {
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            transform: translateX(-50%) translateY(20px);
+            background: #1c1e21;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            z-index: 2000;
+            max-width: 90vw;
+        }
+
+        #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+        #toast.error { background: #b3261e; }
+
+        @media (max-width: 520px) {
+            body { padding-top: 120px; }
+            .page-container { padding: 20px; }
+            #mainNav { gap: 14px; font-size: 13px; }
+            #keksBanner { flex-direction: column; align-items: stretch; gap: 14px; }
+            .keks-actions button { flex: 1; }
+        }
+    </style>
+</head>
+<body>
+    <nav id="mainNav">
+        <span class="brand">Connect</span>
+        <a onclick="showPage('page-home')" data-i18n="nav_home">Home</a>
+        <a onclick="showPage('page-feed')" data-i18n="nav_feed">Feed</a>
+        <a onclick="openOwnProfile()" data-i18n="nav_profile">Profil</a>
+        <a href="impressum.html" data-i18n="nav_imprint">Impressum</a>
+        <a onclick="logout()" data-i18n="nav_logout">Logout</a>
+        <select id="langSwitch" onchange="changeLanguage(this.value)">
+            <option value="de">DE</option>
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+        </select>
+    </nav>
+
+    <!-- Login -->
+    <div class="page-container active" id="page-login">
+        <h1 data-i18n="title">Connect</h1>
+        <h2 data-i18n="login_subtitle">Melde dich an, um weiterzumachen</h2>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Username" autocomplete="username" required>
+            <input type="password" id="password" placeholder="Passwort" autocomplete="current-password" required>
+            <button type="submit" class="btn-block" data-i18n="btn_login">Anmelden</button>
+        </form>
+        <div class="toggle-link" onclick="showPage('page-register')" data-i18n="link_to_register">
+            Noch kein Account? Registrieren
+        </div>
+    </div>
+
+    <!-- Registrieren -->
+    <div class="page-container" id="page-register">
+        <h1 data-i18n="title">Connect</h1>
+        <h2 data-i18n="reg_subtitle">Account anlegen, dauert keine Minute</h2>
+        <form id="registerForm">
+            <input type="text" id="regUsername" placeholder="Username" autocomplete="username" required>
+            <input type="email" id="regEmail" placeholder="E-Mail" autocomplete="email" required>
+            <input type="password" id="regPassword" placeholder="Passwort (min. 6 Zeichen)" autocomplete="new-password" required>
+            <button type="submit" class="btn-block" data-i18n="btn_register">Registrieren</button>
+        </form>
+        <div class="toggle-link" onclick="showPage('page-login')" data-i18n="link_to_login">
+            Schon dabei? Anmelden
+        </div>
+    </div>
+
+    <!-- Startseite -->
+    <div class="page-container" id="page-home">
+        <h1 data-i18n="home_title">Willkommen bei Connect</h1>
+        <p data-i18n="home_text">Im Feed siehst du, was die Leute schreiben. Beiträge kannst du liken und kommentieren.</p>
+        <div class="muted" data-i18n="home_hint">Tipp: Über den Namen an einem Beitrag kommst du auf das Profil und kannst folgen.</div>
+    </div>
+
+    <!-- Feed -->
+    <div class="page-container" id="page-feed">
+        <h1 data-i18n="feed_title">Dein Feed</h1>
+
+        <div id="newPost">
+            <textarea id="postContent" maxlength="1000" data-i18n-placeholder="post_placeholder" placeholder="Was beschäftigt dich gerade?"></textarea>
+            <button onclick="createPost()" data-i18n="btn_post">Posten</button>
+        </div>
+
+        <div id="feed-list">
+            <div class="muted" data-i18n="feed_loading">Lade Beiträge...</div>
+        </div>
+    </div>
+
+    <!-- Profil (eigenes und fremdes) -->
+    <div class="page-container" id="page-profile">
+        <div class="muted" data-i18n="profile_loading">Lade Profil...</div>
+    </div>
+
+    <div id="toast"></div>
+
+    <!-- Kekse: entweder Session-Cookie oder Token im Browser-Speicher -->
+    <div id="keksBanner" hidden>
+        <p>
+            <strong data-i18n="keks_title">Keks gefällig?</strong>
+            <span data-i18n="keks_text">Mit einem Cookie bleibst du auch nach dem Neuladen angemeldet. Ohne Cookie merkt sich die Seite deine Anmeldung nur im Browser-Speicher.</span>
+        </p>
+        <div class="keks-actions">
+            <button type="button" onclick="chooseKeks('ja')" data-i18n="keks_yes">Ja, mit Keks</button>
+            <button type="button" class="leise" onclick="chooseKeks('nein')" data-i18n="keks_no">Nein, ohne Keks</button>
+        </div>
+    </div>
+
+    <script>
+        // Liegt die Oberfläche auf GitHub Pages, hier die Adresse der API
+        // eintragen, ohne Schrägstrich am Ende. Leer heißt: gleiche Domain wie
+        // die Seite, alles über /api.
+        const DEMO_API = 'https://connect-api-ywhs.onrender.com';
+
+        // Läuft die Seite über nginx, geht alles durch den Proxy auf /api.
+        // Beim Öffnen als Datei muss das Backend direkt angesprochen werden.
+        const API_URL = DEMO_API || (location.protocol === 'file:' ? 'http://localhost:8000' : '/api');
+        const TOKEN_KEY = 'connect.token';
+        const USER_KEY = 'connect.user';
+        const LANG_KEY = 'connect.lang';
+        const KEKS_KEY = 'connect.keks';
+
+        // Cookies gehören zur Domain des Backends. Als Datei geöffnet oder mit
+        // einer API auf fremder Domain geht das nicht, dann bleibt nur der
+        // Token im Browser-Speicher.
+        const SAME_ORIGIN = location.protocol !== 'file:' && !DEMO_API;
+
+        let keksChoice = localStorage.getItem(KEKS_KEY);
+        let useCookie = keksChoice === 'ja' && SAME_ORIGIN;
+        let currentToken = useCookie ? null : localStorage.getItem(TOKEN_KEY);
+        let currentUser = JSON.parse(localStorage.getItem(USER_KEY) || 'null');
+        let currentLang = localStorage.getItem(LANG_KEY) || 'de';
+        let openProfileName = null;
+
+        const translations = {
+            de: {
+                nav_home: 'Home',
+                nav_feed: 'Feed',
+                nav_profile: 'Profil',
+                nav_imprint: 'Impressum',
+                nav_logout: 'Logout',
+                keks_title: 'Keks gefällig?',
+                keks_text: 'Mit einem Cookie bleibst du auch nach dem Neuladen angemeldet. Ohne Cookie merkt sich die Seite deine Anmeldung nur im Browser-Speicher.',
+                keks_yes: 'Ja, mit Keks',
+                keks_no: 'Nein, ohne Keks',
+                keks_file: 'Ein Cookie geht hier nicht. Ich merke mir die Anmeldung stattdessen im Browser-Speicher.',
+                keks_changed: 'Gespeichert. Melde dich bitte neu an.',
+                title: 'Connect',
+                login_subtitle: 'Melde dich an, um weiterzumachen',
+                btn_login: 'Anmelden',
+                link_to_register: 'Noch kein Account? Registrieren',
+                reg_subtitle: 'Account anlegen, dauert keine Minute',
+                btn_register: 'Registrieren',
+                link_to_login: 'Schon dabei? Anmelden',
+                home_title: 'Willkommen bei Connect',
+                home_text: 'Im Feed siehst du, was die Leute schreiben. Beiträge kannst du liken und kommentieren.',
+                home_hint: 'Tipp: Über den Namen an einem Beitrag kommst du auf das Profil und kannst folgen.',
+                feed_title: 'Dein Feed',
+                post_placeholder: 'Was beschäftigt dich gerade?',
+                btn_post: 'Posten',
+                feed_loading: 'Lade Beiträge...',
+                feed_empty: 'Hier ist noch nichts. Schreib den ersten Beitrag.',
+                feed_error: 'Feed konnte nicht geladen werden.',
+                comment_placeholder: 'Kommentieren...',
+                btn_comment: 'Senden',
+                comments_loading: 'Lade Kommentare...',
+                comment_empty: 'Noch keine Kommentare.',
+                profile_loading: 'Lade Profil...',
+                profile_joined: 'Dabei seit',
+                profile_posts: 'Beiträge',
+                profile_followers: 'Follower',
+                profile_following: 'Folgt',
+                btn_follow: 'Folgen',
+                btn_unfollow: 'Nicht mehr folgen',
+                profile_none: 'Noch keine Beiträge.',
+                msg_welcome: 'Willkommen zurück',
+                msg_registered: 'Account erstellt. Du kannst dich jetzt anmelden.',
+                msg_posted: 'Beitrag veröffentlicht.',
+                msg_logged_out: 'Abgemeldet.',
+                err_generic: 'Da ist etwas schiefgelaufen.',
+                err_backend: 'Backend nicht erreichbar.',
+                err_session: 'Deine Sitzung ist abgelaufen. Bitte melde dich neu an.'
+            },
+            en: {
+                nav_home: 'Home',
+                nav_feed: 'Feed',
+                nav_profile: 'Profile',
+                nav_imprint: 'Imprint',
+                nav_logout: 'Log out',
+                keks_title: 'Care for a cookie?',
+                keks_text: 'With a cookie you stay signed in after a reload. Without one, the page only keeps your login in browser storage.',
+                keks_yes: 'Yes, with cookie',
+                keks_no: 'No cookie',
+                keks_file: "A cookie isn't possible here. I keep the login in browser storage instead.",
+                keks_changed: 'Saved. Please sign in again.',
+                title: 'Connect',
+                login_subtitle: 'Sign in to continue',
+                btn_login: 'Sign in',
+                link_to_register: 'No account yet? Register',
+                reg_subtitle: 'Create an account, takes a minute',
+                btn_register: 'Register',
+                link_to_login: 'Already here? Sign in',
+                home_title: 'Welcome to Connect',
+                home_text: 'The feed shows what people are writing. You can like and comment on posts.',
+                home_hint: 'Tip: click a name on a post to open the profile and follow that person.',
+                feed_title: 'Your feed',
+                post_placeholder: 'What is on your mind?',
+                btn_post: 'Post',
+                feed_loading: 'Loading posts...',
+                feed_empty: 'Nothing here yet. Write the first post.',
+                feed_error: 'Could not load the feed.',
+                comment_placeholder: 'Write a comment...',
+                btn_comment: 'Send',
+                comments_loading: 'Loading comments...',
+                comment_empty: 'No comments yet.',
+                profile_loading: 'Loading profile...',
+                profile_joined: 'Member since',
+                profile_posts: 'Posts',
+                profile_followers: 'Followers',
+                profile_following: 'Following',
+                btn_follow: 'Follow',
+                btn_unfollow: 'Unfollow',
+                profile_none: 'No posts yet.',
+                msg_welcome: 'Welcome back',
+                msg_registered: 'Account created. You can sign in now.',
+                msg_posted: 'Post published.',
+                msg_logged_out: 'Logged out.',
+                err_generic: 'Something went wrong.',
+                err_backend: 'Backend is not reachable.',
+                err_session: 'Your session has expired. Please sign in again.'
+            },
+            es: {
+                nav_home: 'Inicio',
+                nav_feed: 'Feed',
+                nav_profile: 'Perfil',
+                nav_imprint: 'Aviso legal',
+                nav_logout: 'Salir',
+                keks_title: '¿Quieres una cookie?',
+                keks_text: 'Con una cookie sigues conectado después de recargar. Sin cookie, la página solo guarda tu sesión en el navegador.',
+                keks_yes: 'Sí, con cookie',
+                keks_no: 'Sin cookie',
+                keks_file: 'Aquí no es posible usar una cookie. Guardaré la sesión en el navegador.',
+                keks_changed: 'Guardado. Vuelve a iniciar sesión.',
+                title: 'Connect',
+                login_subtitle: 'Inicia sesión para continuar',
+                btn_login: 'Iniciar sesión',
+                link_to_register: '¿Sin cuenta? Regístrate',
+                reg_subtitle: 'Crea una cuenta, tarda un minuto',
+                btn_register: 'Registrarse',
+                link_to_login: '¿Ya tienes cuenta? Inicia sesión',
+                home_title: 'Bienvenido a Connect',
+                home_text: 'En el feed ves lo que escribe la gente. Puedes dar me gusta y comentar.',
+                home_hint: 'Consejo: toca un nombre en una publicación para abrir el perfil y seguirlo.',
+                feed_title: 'Tu feed',
+                post_placeholder: '¿Qué estás pensando?',
+                btn_post: 'Publicar',
+                feed_loading: 'Cargando publicaciones...',
+                feed_empty: 'Todavía no hay nada. Escribe la primera publicación.',
+                feed_error: 'No se pudo cargar el feed.',
+                comment_placeholder: 'Escribe un comentario...',
+                btn_comment: 'Enviar',
+                comments_loading: 'Cargando comentarios...',
+                comment_empty: 'Aún no hay comentarios.',
+                profile_loading: 'Cargando perfil...',
+                profile_joined: 'Miembro desde',
+                profile_posts: 'Publicaciones',
+                profile_followers: 'Seguidores',
+                profile_following: 'Siguiendo',
+                btn_follow: 'Seguir',
+                btn_unfollow: 'Dejar de seguir',
+                profile_none: 'Aún no hay publicaciones.',
+                msg_welcome: 'Bienvenido de nuevo',
+                msg_registered: 'Cuenta creada. Ya puedes iniciar sesión.',
+                msg_posted: 'Publicación creada.',
+                msg_logged_out: 'Sesión cerrada.',
+                err_generic: 'Algo salió mal.',
+                err_backend: 'No se puede conectar con el backend.',
+                err_session: 'Tu sesión ha caducado. Vuelve a iniciar sesión.'
+            }
+        };
+
+        const locales = { de: 'de-DE', en: 'en-GB', es: 'es-ES' };
+
+        // ------------------------------------------------------------ Basics
+
+        function t(key) {
+            return translations[currentLang][key] || translations.de[key] || key;
+        }
+
+        function applyTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach((el) => {
+                el.textContent = t(el.dataset.i18n);
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+                el.placeholder = t(el.dataset.i18nPlaceholder);
+            });
+            document.documentElement.lang = currentLang;
+            document.getElementById('langSwitch').value = currentLang;
+        }
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem(LANG_KEY, lang);
+            applyTranslations();
+
+            // Texte im offenen Bereich neu aufbauen, sonst bleibt die alte Sprache stehen
+            const current = document.querySelector('.page-container.active');
+            if (current && current.id === 'page-feed' && currentUser) {
+                loadFeed();
+            }
+            if (current && current.id === 'page-profile' && openProfileName) {
+                loadProfile(openProfileName);
+            }
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page-container').forEach((page) => {
+                page.classList.remove('active');
+            });
+            const page = document.getElementById(pageId);
+            if (page) page.classList.add('active');
+            if (pageId !== 'page-profile') openProfileName = null;
+        }
+
+        let toastTimer = null;
+        function toast(message, isError = false) {
+            const box = document.getElementById('toast');
+            box.textContent = message;
+            box.classList.toggle('error', isError);
+            box.classList.add('visible');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => box.classList.remove('visible'), 2800);
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatDate(iso) {
+            const date = new Date(iso);
+            if (isNaN(date)) return '';
+            return date.toLocaleString(locales[currentLang], {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        function formatDay(iso) {
+            const date = new Date(iso);
+            if (isNaN(date)) return '';
+            return date.toLocaleDateString(locales[currentLang], {
+                day: '2-digit', month: 'long', year: 'numeric'
+            });
+        }
+
+        function avatar(name) {
+            const letter = (name || '?').charAt(0).toUpperCase();
+            return `<div class="avatar">${escapeHtml(letter)}</div>`;
+        }
+
+        function apiError(message, status) {
+            const error = new Error(message);
+            error.status = status;
+            return error;
+        }
+
+        async function api(path, options = {}) {
+            // X-Connect ist Pflicht, sobald die Session im Cookie steckt: ein
+            // fremdes Formular kann diesen Header nicht einfach mitschicken.
+            const headers = { 'Content-Type': 'application/json', 'X-Connect': '1' };
+            if (!useCookie && currentToken) headers.Authorization = 'Bearer ' + currentToken;
+
+            let response;
+            try {
+                response = await fetch(API_URL + path, {
+                    credentials: useCookie ? 'include' : 'same-origin',
+                    ...options,
+                    headers
+                });
+            } catch (error) {
+                throw apiError(t('err_backend'), 0);
+            }
+
+            const data = response.status === 204
+                ? null
+                : await response.json().catch(() => null);
+
+            // Abgelaufene oder zurückgezogene Session: raus aus dem angemeldeten Bereich
+            if (response.status === 401 && currentUser) {
+                revokeSession();
+                clearSession();
+                showPage('page-login');
+                toast(t('err_session'), true);
+                throw apiError(t('err_session'), 401);
+            }
+            if (!response.ok) {
+                throw apiError(errorMessage(data), response.status);
+            }
+            return data;
+        }
+
+        function errorMessage(data) {
+            if (!data || !data.detail) return t('err_generic');
+            if (typeof data.detail === 'string') return data.detail;
+            if (Array.isArray(data.detail) && data.detail.length) {
+                return String(data.detail[0].msg || '').replace(/^Value error,\s*/, '') || t('err_generic');
+            }
+            return t('err_generic');
+        }
+
+        // ------------------------------------------------------------ Session
+
+        function saveSession() {
+            // Im Cookie-Modus hat der Browser den Token, im Speicher liegt nichts
+            if (!useCookie && currentToken) {
+                localStorage.setItem(TOKEN_KEY, currentToken);
+            } else {
+                localStorage.removeItem(TOKEN_KEY);
+            }
+            if (currentUser) {
+                localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
+            } else {
+                localStorage.removeItem(USER_KEY);
+            }
+            document.getElementById('mainNav').style.display = currentUser ? 'flex' : 'none';
+        }
+
+        function clearSession() {
+            currentToken = null;
+            currentUser = null;
+            saveSession();
+        }
+
+        async function revokeSession() {
+            // Session auch auf dem Server beenden, nicht nur lokal vergessen
+            const headers = { 'X-Connect': '1' };
+            if (currentToken) headers.Authorization = 'Bearer ' + currentToken;
+            try {
+                await fetch(API_URL + '/logout', {
+                    method: 'POST',
+                    headers,
+                    credentials: 'include'
+                });
+            } catch (error) {
+                // Backend nicht erreichbar - der Token läuft dann eben ab
+            }
+        }
+
+        async function logout() {
+            await revokeSession();
+            clearSession();
+            applyTranslations();
+            showPage('page-login');
+            toast(t('msg_logged_out'));
+        }
+
+        // ------------------------------------------------------------ Kekse
+
+        function showKeksBanner() {
+            if (keksChoice) return;
+            document.getElementById('keksBanner').hidden = false;
+        }
+
+        function chooseKeks(choice) {
+            const wasLoggedIn = Boolean(currentUser);
+            keksChoice = choice;
+            useCookie = choice === 'ja' && SAME_ORIGIN;
+            localStorage.setItem(KEKS_KEY, choice);
+            document.getElementById('keksBanner').hidden = true;
+
+            if (choice === 'ja' && !SAME_ORIGIN) toast(t('keks_file'), true);
+
+            // Die laufende Anmeldung hängt an der alten Speicherart, also neu anmelden
+            if (wasLoggedIn) {
+                revokeSession();
+                clearSession();
+                applyTranslations();
+                showPage('page-login');
+                toast(t('keks_changed'));
+            }
+        }
+
+        // ------------------------------------------------------------ Feed
+
+        function renderPost(post) {
+            const liked = post.liked_by_me ? 'liked' : '';
+            return `
+                <article class="post-card" data-post="${post.id}">
+                    <div class="post-head">
+                        ${avatar(post.username)}
+                        <div>
+                            <a class="post-author" onclick="loadProfile('${escapeHtml(post.username)}')">${escapeHtml(post.username)}</a>
+                            <div class="post-time">${formatDate(post.created_at)}</div>
+                        </div>
+                    </div>
+                    <p class="post-text">${escapeHtml(post.content)}</p>
+                    <div class="post-actions">
+                        <button class="action ${liked}" onclick="toggleLike(${post.id})">
+                            <span class="like-icon">${post.liked_by_me ? '&#9829;' : '&#9825;'}</span>
+                            <span class="like-count">${post.likes}</span>
+                        </button>
+                        <button class="action" onclick="toggleComments(${post.id})">
+                            <span>&#128172;</span>
+                            <span class="comment-count">${post.comments}</span>
+                        </button>
+                    </div>
+                    <div class="comments" id="comments-${post.id}" hidden></div>
+                </article>
+            `;
+        }
+
+        async function createPost() {
+            const field = document.getElementById('postContent');
+            const content = field.value.trim();
+            if (!content) return;
+
+            const button = field.nextElementSibling;
+            button.disabled = true;
+            try {
+                await api('/posts', {
+                    method: 'POST',
+                    body: JSON.stringify({ content })
+                });
+                field.value = '';
+                await loadFeed();
+            } catch (error) {
+                toast(error.message, true);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        async function loadFeed() {
+            const list = document.getElementById('feed-list');
+            list.innerHTML = `<div class="muted">${t('feed_loading')}</div>`;
+
+            try {
+                const posts = await api('/feed');
+                if (!posts.length) {
+                    list.innerHTML = `<div class="muted">${t('feed_empty')}</div>`;
+                    return;
+                }
+                list.innerHTML = posts.map(renderPost).join('');
+            } catch (error) {
+                list.innerHTML = `<div class="muted">${t('feed_error')}</div>`;
+                toast(error.message, true);
+            }
+        }
+
+        function postElement(postId) {
+            return document.querySelector(`[data-post="${postId}"]`);
+        }
+
+        async function toggleLike(postId) {
+            const article = postElement(postId);
+            const button = article.querySelector('.post-actions .action');
+            const icon = article.querySelector('.like-icon');
+            const count = article.querySelector('.like-count');
+
+            button.disabled = true;
+            try {
+                const result = await api(`/posts/${postId}/like`, { method: 'POST' });
+                count.textContent = result.likes;
+                icon.innerHTML = result.liked ? '&#9829;' : '&#9825;';
+                button.classList.toggle('liked', result.liked);
+            } catch (error) {
+                toast(error.message, true);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        async function toggleComments(postId) {
+            const box = document.getElementById(`comments-${postId}`);
+            if (!box.hidden) {
+                box.hidden = true;
+                return;
+            }
+            box.hidden = false;
+            await loadComments(postId);
+        }
+
+        async function loadComments(postId) {
+            const box = document.getElementById(`comments-${postId}`);
+            box.innerHTML = `<div class="muted">${t('comments_loading')}</div>`;
+
+            let comments = [];
+            try {
+                comments = await api(`/posts/${postId}/comments`);
+            } catch (error) {
+                toast(error.message, true);
+            }
+
+            const list = comments.length
+                ? comments.map((comment) => `
+                    <div class="comment">
+                        ${avatar(comment.username)}
+                        <div class="comment-body">
+                            <strong>${escapeHtml(comment.username)}</strong>
+                            <p>${escapeHtml(comment.content)}</p>
+                            <small>${formatDate(comment.created_at)}</small>
+                        </div>
+                    </div>
+                `).join('')
+                : `<div class="muted">${t('comment_empty')}</div>`;
+
+            box.innerHTML = `
+                ${list}
+                <div class="comment-form">
+                    <input type="text" maxlength="500" placeholder="${escapeHtml(t('comment_placeholder'))}"
+                           onkeydown="if (event.key === 'Enter') submitComment(${postId}, this)">
+                    <button onclick="submitComment(${postId}, this.previousElementSibling)">${t('btn_comment')}</button>
+                </div>
+            `;
+        }
+
+        async function submitComment(postId, input) {
+            const content = input.value.trim();
+            if (!content) return;
+
+            input.disabled = true;
+            try {
+                await api(`/posts/${postId}/comments`, {
+                    method: 'POST',
+                    body: JSON.stringify({ content })
+                });
+                input.value = '';
+                await loadComments(postId);
+
+                // Zähler am Beitrag mitziehen
+                const article = postElement(postId);
+                const counter = article.querySelector('.comment-count');
+                counter.textContent = Number(counter.textContent) + 1;
+            } catch (error) {
+                toast(error.message, true);
+            } finally {
+                input.disabled = false;
+                input.focus();
+            }
+        }
+
+        // ------------------------------------------------------------ Profil
+
+        function openOwnProfile() {
+            if (currentUser) loadProfile(currentUser.username);
+        }
+
+        async function loadProfile(username) {
+            openProfileName = username;
+            const page = document.getElementById('page-profile');
+            showPage('page-profile');
+            page.innerHTML = `<div class="muted">${t('profile_loading')}</div>`;
+
+            let profile;
+            try {
+                profile = await api(`/users/${encodeURIComponent(username)}`);
+            } catch (error) {
+                page.innerHTML = `<div class="muted">${t('profile_loading')}</div>`;
+                toast(error.message, true);
+                return;
+            }
+
+            const posts = profile.posts.length
+                ? profile.posts.map(renderPost).join('')
+                : `<div class="muted">${t('profile_none')}</div>`;
+
+            const followButton = profile.is_me
+                ? ''
+                : `<button class="${profile.is_following ? 'btn-secondary' : ''}" id="followButton">
+                       ${profile.is_following ? t('btn_unfollow') : t('btn_follow')}
+                   </button>`;
+
+            page.innerHTML = `
+                <div class="profile-head">
+                    ${avatar(profile.username)}
+                    <div>
+                        <h1>${escapeHtml(profile.username)}</h1>
+                        <div class="muted">${t('profile_joined')} ${formatDay(profile.joined)}</div>
+                    </div>
+                </div>
+                <div class="profile-stats">
+                    <span><b>${profile.posts_count}</b> ${t('profile_posts')}</span>
+                    <span><b>${profile.followers}</b> ${t('profile_followers')}</span>
+                    <span><b>${profile.following}</b> ${t('profile_following')}</span>
+                </div>
+                <div class="profile-actions">${followButton}</div>
+                <div class="profile-posts">
+                    <h3>${t('profile_posts')}</h3>
+                    ${posts}
+                </div>
+            `;
+
+            if (followButton) {
+                document.getElementById('followButton').addEventListener('click', () => toggleFollow(profile.username));
+            }
+        }
+
+        async function toggleFollow(username) {
+            const button = document.getElementById('followButton');
+            button.disabled = true;
+            try {
+                const result = await api(`/users/${encodeURIComponent(username)}/follow`, {
+                    method: 'POST'
+                });
+                await loadProfile(username);
+                if (result.following) {
+                    toast(`${t('btn_follow')} ${result.username}`);
+                }
+            } catch (error) {
+                button.disabled = false;
+                toast(error.message, true);
+            }
+        }
+
+        // ------------------------------------------------------------ Formulare
+
+        document.getElementById('loginForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            try {
+                const data = await api('/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password, use_cookie: useCookie })
+                });
+                currentToken = useCookie ? null : data.token;
+                currentUser = data.user;
+                saveSession();
+                document.getElementById('loginForm').reset();
+                showPage('page-home');
+                toast(t('msg_welcome'));
+            } catch (error) {
+                toast(error.message, true);
+            }
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+
+            try {
+                await api('/register', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, email, password })
+                });
+                document.getElementById('registerForm').reset();
+                showPage('page-login');
+                toast(t('msg_registered'));
+            } catch (error) {
+                toast(error.message, true);
+            }
+        });
+
+        // Start: gespeicherte Session gegen den Server prüfen
+        async function start() {
+            saveSession();
+            applyTranslations();
+            showKeksBanner();
+
+            // Im Cookie-Modus weiß nur der Server, ob noch eine Session offen ist
+            if (!currentToken && !useCookie) return;
+
+            try {
+                currentUser = await api('/me');
+                saveSession();
+                showPage('page-home');
+            } catch (error) {
+                // 401 heißt beim ersten Besuch nur: kein Cookie, also bleibt der Login stehen
+                if (error.status !== 401) showPage('page-home');
+            }
+        }
+
+        start();
+    </script>
+</body>
+</html>

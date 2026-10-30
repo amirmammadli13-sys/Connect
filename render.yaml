@@ -1,0 +1,24 @@
+# Render-Blueprint für die Demo-API.
+#
+# Die Oberfläche liegt auf GitHub Pages, die Datenbank kommt von Neon (kostenlos
+# und läuft nicht nach 30 Tagen ab). Der Ranking-Service ist bewusst nicht dabei:
+# zwei kostenlose Web Services teilen sich 750 Stunden im Monat und schlafen
+# beide ein. Ohne ihn liefert das Backend den Feed chronologisch.
+services:
+  - type: web
+    name: connect-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /feed
+    envVars:
+      # Verbindungsstring aus Neon, wird beim Anlegen des Blueprints abgefragt
+      - key: DATABASE_URL
+        sync: false
+      # Ohne diese Herkunft blockt der Browser die Anfragen von Pages
+      - key: CORS_ORIGINS
+        value: https://amirmammadli13-sys.github.io,http://localhost,http://127.0.0.1
+      - key: SESSION_DAYS
+        value: "30"
