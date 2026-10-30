@@ -1,115 +1,118 @@
+**English** · [Deutsch](README.de.md)
+
 # Connect
 
-Ein kleines soziales Netzwerk, das ich zum Lernen gebaut habe: Account anlegen,
-Beiträge schreiben, liken, kommentieren, anderen Leuten folgen.
+A small social network I built to learn: create an account, write posts, like and
+comment, follow other people.
 
-**Demo:** https://amirmammadli13-sys.github.io/Connect/ — Zugang `demo` / `connect-demo`.
-Der erste Aufruf kann eine Minute dauern: die API läuft auf einem kostenlosen
-Server, der bei Inaktivität einschläft. Wie das aufgebaut ist, steht unter
-[Deployen](#deployen).
+**Demo:** https://amirmammadli13-sys.github.io/Connect/ — sign in with `demo` / `connect-demo`.
+The first request can take a minute: the API runs on a free server that falls
+asleep when idle. How it is put together is described under
+[Deploying](#deploying).
 
 ## Screenshots
 
-<!-- Nach dem ersten Lauf zwei Bilder in docs/ legen und hier einbinden:
+<!-- After the first run, put two images into docs/ and include them here:
 ![Feed](docs/feed.png)
-![Profil](docs/profil.png)
+![Profile](docs/profile.png)
 -->
 
-Lokal läuft alles in Docker, drei Container plus Datenbank:
+Locally everything runs in Docker: three containers plus a database.
 
-- **nginx** liefert das Frontend aus und schickt `/api/` ans Backend
-- **backend** – FastAPI mit SQLAlchemy, kümmert sich um Nutzer, Beiträge, Likes, Kommentare, Follows
-- **ai-service** – sortiert den Feed für jeden Nutzer
+- **nginx** serves the frontend and forwards `/api/` to the backend
+- **backend** – FastAPI with SQLAlchemy, handles users, posts, likes, comments, follows
+- **ai-service** – sorts the feed for each user
 - **db** – Postgres 16
 
-## Starten
+## Running it
 
 ```bash
-cp .env.example .env      # einmalig, Passwort in der Datei ändern
+cp .env.example .env      # once, change the password in the file
 docker compose up -d --build
 ```
 
-Danach läuft die Seite auf http://localhost. Die Datenbank ist beim ersten Start
-leer, also erst registrieren, dann anmelden.
+The site then runs on http://localhost. The database is empty on the first start,
+so register first, then sign in.
 
-Die `.env` bleibt lokal (steht in `.gitignore`), im Repo liegt nur `.env.example`.
-Wer die Instanz erreichbar betreibt, sollte das Passwort daraus nicht übernehmen.
+The `.env` stays local (it is in `.gitignore`); only `.env.example` is in the repo.
+Anyone running an instance that is reachable from the internet should not reuse
+that password.
 
-## Struktur
+## Layout
 
 ```
-html/           index.html (die ganze App) und impressum.html
-backend/        main.py (API), database.py (Modelle), seed_demo.py (Demo-Inhalt)
-ai/             recommendation_service.py (Feed-Sortierung)
+html/           index.html (the whole app) and impressum.html
+backend/        main.py (API), database.py (models), seed_demo.py (demo content)
+ai/             recommendation_service.py (feed ranking)
 deployment/     nginx.conf
-render.yaml     Blueprint für die Demo-API bei Render
-.github/        Pages-Workflow für html/
+render.yaml     blueprint for the demo API on Render
+.github/        Pages workflow for html/
 ```
 
-## Anmeldung
+## Signing in
 
-Beim ersten Besuch fragt die Seite, ob sie ein Cookie benutzen darf. Die Antwort
-landet im Browser-Speicher, nicht auf dem Server.
+On the first visit the page asks whether it may use a cookie. The answer is kept
+in browser storage, not on the server.
 
-**Mit Cookie** (Standard, wenn die Seite über nginx läuft): Nach dem Login setzt
-das Backend `connect_session` – `HttpOnly`, `SameSite=Lax`, 30 Tage gültig. Der
-Token ist für JavaScript nicht lesbar, jede Anfrage schickt ihn automatisch mit.
-Weil der Browser das Cookie von allein mitschickt, verlangt das Backend bei
-schreibenden Anfragen zusätzlich den Header `X-Connect: 1`. Ein fremdes Formular
-kann den nicht setzen, ohne dass der Browser vorher einen Preflight macht.
+**With a cookie** (the default when the site runs behind nginx): after login the
+backend sets `connect_session` – `HttpOnly`, `SameSite=Lax`, valid for 30 days.
+JavaScript cannot read the token, and every request carries it automatically.
+Because the browser sends the cookie on its own, the backend also demands the
+header `X-Connect: 1` on writing requests. A third-party form cannot set that
+without the browser performing a preflight first.
 
-**Ohne Cookie**: Der Login liefert den Token im Antwort-Body, das Frontend legt
-ihn im `localStorage` ab und schickt ihn als `Authorization: Bearer <token>`.
-Das ist der Weg, wenn `html/index.html` direkt als Datei geöffnet wird – dort
-gibt es keine Domain, unter der ein Cookie liegen könnte.
+**Without a cookie**: the login returns the token in the response body, the
+frontend stores it in `localStorage` and sends it as
+`Authorization: Bearer <token>`. That is the way when `html/index.html` is opened
+directly as a file – there is no domain there that a cookie could belong to.
 
-Läuft das Frontend auf einer anderen Domain als die API (GitHub Pages),
-funktioniert nur der Weg ohne Cookie: ein Cookie gilt immer für die Domain des
-Backends. Die Seite merkt das und schickt den Token als Header.
+If the frontend runs on a different domain than the API (GitHub Pages), only the
+cookie-less way works: a cookie always belongs to the backend's domain. The page
+notices that and sends the token as a header.
 
-In beiden Fällen gilt:
+In both cases:
 
-- Der Token ist ein Zufallswert, in der Tabelle `sessions` liegt nur sein
-  SHA-256-Hash, dazu Ablaufdatum und Nutzer.
-- Abgelaufene Sessions werden beim Login weggeräumt, `/logout` löscht die Session
-  sofort und entfernt das Cookie.
-- Wer angemeldet ist, entscheidet der Server. Im Request-Body steht keine User-ID.
+- The token is a random value; the `sessions` table only holds its SHA-256 hash,
+  plus an expiry date and the user.
+- Expired sessions are cleaned up on login; `/logout` deletes the session
+  immediately and removes the cookie.
+- The server decides who is signed in. No user ID is taken from the request body.
 
-Umstellen lässt sich das jederzeit im Impressum („Keks-Entscheidung zurücksetzen“),
-danach meldet man sich einmal neu an.
+You can switch at any time in the imprint page ("Keks-Entscheidung
+zurücksetzen"); afterwards you sign in once more.
 
 ## API
 
-Alles läuft unter `/api`, beim Start ohne Docker auch direkt auf Port 8000.
-„Token“ heißt: entweder Session-Cookie oder `Authorization: Bearer <token>`.
+Everything lives under `/api`; without Docker it also runs directly on port 8000.
+"Token" means either the session cookie or `Authorization: Bearer <token>`.
 
-| Methode | Pfad | Anmeldung | Zweck |
+| Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
-| POST | `/register` | – | Account anlegen (Username, E-Mail, Passwort) |
-| POST | `/login` | – | Anmelden; `use_cookie: false` für den Token im Body |
-| POST | `/logout` | Token | Session beenden, Cookie löschen |
-| GET | `/me` | Token | Wer gehört zu diesem Token |
-| POST | `/posts` | Token | Beitrag schreiben |
-| GET | `/feed?limit=50` | optional | Feed, für angemeldete Nutzer sortiert |
-| POST | `/posts/{id}/like` | Token | Like setzen oder wieder wegnehmen |
-| GET | `/posts/{id}/comments` | – | Kommentare eines Beitrags |
-| POST | `/posts/{id}/comments` | Token | Kommentar schreiben |
-| GET | `/users/{username}` | optional | Profil mit Beiträgen, Follower-Zahlen |
-| POST | `/users/{username}/follow` | Token | Folgen bzw. entfolgen |
+| POST | `/register` | – | Create an account (username, e-mail, password) |
+| POST | `/login` | – | Sign in; `use_cookie: false` returns the token in the body |
+| POST | `/logout` | Token | End the session, delete the cookie |
+| GET | `/me` | Token | Which user belongs to this token |
+| POST | `/posts` | Token | Write a post |
+| GET | `/feed?limit=50` | optional | Feed, ranked for signed-in users |
+| POST | `/posts/{id}/like` | Token | Add or remove a like |
+| GET | `/posts/{id}/comments` | – | Comments of a post |
+| POST | `/posts/{id}/comments` | Token | Write a comment |
+| GET | `/users/{username}` | optional | Profile with posts and follower counts |
+| POST | `/users/{username}/follow` | Token | Follow or unfollow |
 
-Mit Cookie:
+With a cookie:
 
 ```bash
-curl -s -c kekse.txt -X POST localhost/api/login \
+curl -s -c cookies.txt -X POST localhost/api/login \
   -H 'Content-Type: application/json' \
   -d '{"username":"amir","password":"geheim123"}'
 
-curl -s -b kekse.txt -X POST localhost/api/posts \
+curl -s -b cookies.txt -X POST localhost/api/posts \
   -H 'X-Connect: 1' -H 'Content-Type: application/json' \
-  -d '{"content":"Hallo"}'
+  -d '{"content":"Hello"}'
 ```
 
-Ohne Cookie:
+Without a cookie:
 
 ```bash
 TOKEN=$(curl -s -X POST localhost/api/login \
@@ -119,37 +122,38 @@ TOKEN=$(curl -s -X POST localhost/api/login \
 
 curl -s -X POST localhost/api/posts \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"content":"Hallo"}'
+  -d '{"content":"Hello"}'
 ```
 
-## Wie der Feed sortiert wird
+## How the feed is ranked
 
-Der `ai-service` bekommt die Kandidaten-Beiträge und rechnet für jeden einen Score
-aus drei Teilen:
+The `ai-service` receives the candidate posts and computes a score for each of
+them out of three parts:
 
-- 40 %: folgt man dem Autor?
-- 35 %: wie viele Likes und Kommentare hat der Beitrag (im Vergleich zum Rest)
-- 25 %: wie alt ist er (Halbwertszeit ein Tag)
+- 40 %: do you follow the author?
+- 35 %: how many likes and comments does the post have (compared to the rest)
+- 25 %: how old is it (half-life of one day)
 
-Ist der Service nicht erreichbar, liefert das Backend den Feed einfach
-chronologisch aus, statt einen Fehler zu werfen.
+If the service is unreachable, the backend simply returns the feed in
+chronological order instead of raising an error.
 
-Anfangs wollte ich hier ein TensorFlow-Modell einsetzen. Das habe ich wieder
-verworfen: ohne echte Interaktionsdaten hätte das Modell nur geraten, und die
-Heuristik oben tut genau das, was ich wollte, ohne den Ballast.
+At first I wanted to train a TensorFlow model here. I dropped that idea: without
+real interaction data the model would only be guessing, while the heuristic above
+does exactly what I wanted without the baggage.
 
-## Einstellungen
+## Settings
 
-Alles über Umgebungsvariablen, beim Docker-Start aus der `.env`:
+Everything goes through environment variables, read from `.env` when Docker
+starts:
 
-| Variable | Standard | Zweck |
+| Variable | Default | Purpose |
 | --- | --- | --- |
-| `POSTGRES_PASSWORD` | `connect_password` | Passwort der Datenbank |
-| `SESSION_DAYS` | `30` | Wie lange eine Anmeldung gilt |
-| `COOKIE_SECURE` | `0` | `1` setzen, sobald die Seite über HTTPS läuft |
-| `CORS_ORIGINS` | localhost + `null` | zusätzliche Origins, falls das Frontend woanders liegt |
+| `POSTGRES_PASSWORD` | `connect_password` | Database password |
+| `SESSION_DAYS` | `30` | How long a login stays valid |
+| `COOKIE_SECURE` | `0` | Set to `1` once the site runs over HTTPS |
+| `CORS_ORIGINS` | localhost + `null` | Extra origins if the frontend lives elsewhere |
 
-## Lokal ohne Docker
+## Running without Docker
 
 ```bash
 cd backend
@@ -157,31 +161,31 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-Ohne `DATABASE_URL` landet alles in einer SQLite-Datei `connect.db` neben dem Code.
-Für den sortierten Feed muss der Ranking-Service zusätzlich laufen:
+Without `DATABASE_URL` everything lands in an SQLite file `connect.db` next to the
+code. For the ranked feed the ranking service has to run as well:
 
 ```bash
 cd ai
 uvicorn recommendation_service:app --port 8001
 ```
 
-Danach `html/index.html` direkt im Browser öffnen – das Frontend merkt, dass es
-nicht über nginx läuft, und spricht `localhost:8000` direkt an.
+After that, open `html/index.html` directly in the browser – the frontend notices
+that it is not served by nginx and talks to `localhost:8000` directly.
 
-## Deployen
+## Deploying
 
-Für die Demo wird der Stack geteilt: Oberfläche auf GitHub Pages (kostenlos,
-statisch), API auf Render (kostenlos, schläft bei Inaktivität ein), Datenbank bei
-Neon (kostenlos, läuft nicht nach 30 Tagen ab). Der Ranking-Service bleibt weg,
-deshalb ist der Feed online chronologisch sortiert.
+For the demo the stack is split: frontend on GitHub Pages (free, static), API on
+Render (free, sleeps when idle), database on Neon (free, does not expire after 30
+days). The ranking service is left out, which is why the online feed is in
+chronological order.
 
-1. **Datenbank bei Neon** anlegen (<https://neon.com>, Free Plan, kein Kartenzwang)
-   und den Verbindungsstring kopieren. Er lässt sich unverändert einfügen, das
-   Backend ergänzt den Treiber selbst (`postgresql://` → `postgresql+psycopg://`).
-2. **API bei Render**: New → Blueprint → dieses Repo auswählen. Render liest
-   `render.yaml` und fragt nach `DATABASE_URL` – dort den Neon-String einfügen.
-   Die API läuft danach unter `https://connect-api.onrender.com`.
-3. **Demo-Inhalt anlegen**, einmalig von lokal aus:
+1. **Create the database on Neon** (<https://neon.com>, free plan, no credit card)
+   and copy the connection string. It can be pasted unchanged; the backend adds
+   the driver itself (`postgresql://` → `postgresql+psycopg://`).
+2. **API on Render**: New → Blueprint → pick this repository. Render reads
+   `render.yaml` and asks for `DATABASE_URL` – paste the Neon string there.
+   The API then runs at `https://connect-api-ywhs.onrender.com`.
+3. **Create the demo content**, once, from your machine:
 
    ```bash
    cd backend
@@ -189,45 +193,42 @@ deshalb ist der Feed online chronologisch sortiert.
    DATABASE_URL='postgresql://...' python seed_demo.py
    ```
 
-   Das legt `demo` / `connect-demo` an, dazu zwei weitere Nutzer, Beiträge,
-   Likes und Kommentare, damit der Feed nicht leer wirkt. Mehrfaches Ausführen
-   ändert nichts.
-4. **Frontend-Adresse eintragen**: in `html/index.html` oben `DEMO_API` auf die
-   Render-Adresse setzen, ohne Schrägstrich am Ende:
+   This creates `demo` / `connect-demo` plus two more users, posts, likes and
+   comments, so the feed is not empty. Running it again changes nothing.
+4. **Point the frontend at the API**: in `html/index.html`, at the top, set
+   `DEMO_API` to the Render address without a trailing slash:
 
    ```js
-   const DEMO_API = 'https://connect-api.onrender.com';
+   const DEMO_API = 'https://connect-api-ywhs.onrender.com';
    ```
 
-5. **CORS prüfen**: in `render.yaml` steht die Pages-Herkunft bereits drin
-   (`https://amirmammadli13-sys.github.io`). Bei anderem Nutzernamen anpassen,
-   sonst blockt der Browser jede Anfrage.
-6. **Pages einschalten**: Repo → Settings → Pages → Source „GitHub Actions“.
-   Der Workflow `.github/workflows/pages.yml` veröffentlicht bei jedem Push auf
-   `main` den Ordner `html/`. Die Seite liegt dann unter
+5. **Check CORS**: `render.yaml` already contains the Pages origin
+   (`https://amirmammadli13-sys.github.io`). Adjust it for a different username,
+   otherwise the browser blocks every request.
+6. **Enable Pages**: repo → Settings → Pages → Source "GitHub Actions".
+   The workflow `.github/workflows/pages.yml` publishes the `html/` folder on every
+   push to `main`. The site then lives at
    `https://amirmammadli13-sys.github.io/Connect/`.
 
-Kaltstart: nach 15 Minuten ohne Zugriff schläft der kostenlose Dienst ein, die
-nächste Anfrage braucht etwa eine Minute. Das ist der Preis dafür, dass die Demo
-nichts kostet.
+Cold start: after 15 minutes without traffic the free service falls asleep; the
+next request takes about a minute. That is the price of a demo that costs nothing.
 
-## Wenn die Anmeldung nicht klappt
+## If signing in does not work
 
-Drei Ursachen decken fast alles ab, in dieser Reihenfolge prüfen:
+Three causes cover almost everything; check them in this order:
 
-1. **Die Seite fragt `…github.io/api/login` an.** Dann ist in der ausgelieferten
-   `index.html` `DEMO_API` leer, die Anfrage geht ins Leere und der Browser
-   meldet einen Netzwerkfehler. Die Adresse steht im Repo, also wurde die Seite
-   nur nicht neu gebaut: Repo → Actions → „Pages“ muss nach dem Push einmal
-   grün durchlaufen. Passiert das nie, fehlt der Workflow
-   `.github/workflows/pages.yml`.
-2. **`401 Username oder Passwort falsch`.** Dann existiert der Demo-Account in
-   dieser Datenbank nicht. `python seed_demo.py` mit demselben `DATABASE_URL`
-   ausführen, das auch Render benutzt — nicht mit einem anderen Neon-Branch.
-3. **`CORS`-Fehler in der Browser-Konsole.** Die Herkunft der Seite fehlt in
-   `CORS_ORIGINS` (`render.yaml`), der Browser blockt die Antwort dann ab.
+1. **The page requests `…github.io/api/login`.** Then `DEMO_API` is empty in the
+   deployed `index.html`, the request goes nowhere and the browser reports a
+   network error. The address is in the repository, so the page was simply not
+   rebuilt: repo → Actions → "Pages" has to run green once after the push. If that
+   never happens, the workflow `.github/workflows/pages.yml` is missing.
+2. **`401 Username oder Passwort falsch`.** The demo account does not exist in
+   this database. Run `python seed_demo.py` with the same `DATABASE_URL` that
+   Render uses – not against a different Neon branch.
+3. **`CORS` error in the browser console.** The page's origin is missing in
+   `CORS_ORIGINS` (`render.yaml`), so the browser discards the response.
 
-Prüfen, ob die API selbst tut, was sie soll — ohne Browser:
+To check whether the API itself does what it should, without a browser:
 
 ```bash
 curl -s https://connect-api-ywhs.onrender.com/feed | head -c 200
@@ -237,22 +238,27 @@ curl -s -X POST https://connect-api-ywhs.onrender.com/login \
   -d '{"username":"demo","password":"connect-demo","use_cookie":false}'
 ```
 
-Kommt beim ersten Befehl eine Liste von Beiträgen und beim zweiten ein `token`,
-liegt es nur an der Seite — nicht an Datenbank oder API.
+If the first command returns a list of posts and the second one a `token`, the
+problem is only in the page – not in the database or the API.
 
-## Was noch fehlt
+## What is still missing
 
-- Kein Rate-Limit beim Login, keine Zwei-Faktor-Anmeldung, kein „Passwort vergessen“.
-- Beiträge lassen sich nicht bearbeiten oder löschen.
-- Kein Bild-Upload, keine Benachrichtigungen, keine Suche.
-- Keine automatischen Tests, ich habe alles von Hand durchgeklickt.
-- Online fehlt der Ranking-Service (siehe [Deployen](#deployen)), der Feed ist
-dort chronologisch.
-- Wer kein Cookie will, dessen Token liegt im `localStorage` und ist damit für
-  JavaScript lesbar. Das ist der Preis dafür, dass der Datei-Modus funktioniert.
+- No rate limit on login, no two-factor authentication, no "forgot password".
+- Posts cannot be edited or deleted.
+- No image upload, no notifications, no search.
+- No automated tests; I clicked through everything by hand.
+- The ranking service is missing online (see [Deploying](#deploying)), so the feed
+  there is chronological.
+- If you decline the cookie, your token sits in `localStorage` and is therefore
+  readable by JavaScript. That is the price for the file mode to work.
 
-## Datenschutz
+## Privacy
 
-Passwörter liegen gehasht in der Datenbank (bcrypt), Session-Tokens nur als Hash.
-Kein Tracking, keine Werbung, keine Weitergabe an Dritte. Trotzdem: das ist ein
-Lernprojekt, keine Plattform für echte persönliche Daten.
+Passwords are stored hashed (bcrypt), session tokens only as hashes. No tracking,
+no ads, no sharing with third parties. Still: this is a learning project, not a
+platform for real personal data.
+
+## Languages
+
+The interface speaks German, English and Spanish; pick the language in the top
+right corner. The choice is stored in the browser and survives a reload.
