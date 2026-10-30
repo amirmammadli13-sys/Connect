@@ -211,6 +211,35 @@ Kaltstart: nach 15 Minuten ohne Zugriff schläft der kostenlose Dienst ein, die
 nächste Anfrage braucht etwa eine Minute. Das ist der Preis dafür, dass die Demo
 nichts kostet.
 
+## Wenn die Anmeldung nicht klappt
+
+Drei Ursachen decken fast alles ab, in dieser Reihenfolge prüfen:
+
+1. **Die Seite fragt `…github.io/api/login` an.** Dann ist in der ausgelieferten
+   `index.html` `DEMO_API` leer, die Anfrage geht ins Leere und der Browser
+   meldet einen Netzwerkfehler. Die Adresse steht im Repo, also wurde die Seite
+   nur nicht neu gebaut: Repo → Actions → „Pages“ muss nach dem Push einmal
+   grün durchlaufen. Passiert das nie, fehlt der Workflow
+   `.github/workflows/pages.yml`.
+2. **`401 Username oder Passwort falsch`.** Dann existiert der Demo-Account in
+   dieser Datenbank nicht. `python seed_demo.py` mit demselben `DATABASE_URL`
+   ausführen, das auch Render benutzt — nicht mit einem anderen Neon-Branch.
+3. **`CORS`-Fehler in der Browser-Konsole.** Die Herkunft der Seite fehlt in
+   `CORS_ORIGINS` (`render.yaml`), der Browser blockt die Antwort dann ab.
+
+Prüfen, ob die API selbst tut, was sie soll — ohne Browser:
+
+```bash
+curl -s https://connect-api-ywhs.onrender.com/feed | head -c 200
+
+curl -s -X POST https://connect-api-ywhs.onrender.com/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"demo","password":"connect-demo","use_cookie":false}'
+```
+
+Kommt beim ersten Befehl eine Liste von Beiträgen und beim zweiten ein `token`,
+liegt es nur an der Seite — nicht an Datenbank oder API.
+
 ## Was noch fehlt
 
 - Kein Rate-Limit beim Login, keine Zwei-Faktor-Anmeldung, kein „Passwort vergessen“.
