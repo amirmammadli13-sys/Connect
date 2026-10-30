@@ -23,7 +23,8 @@
         #mainNav {
             background-color: #1877f2;
             padding: 12px 20px;
-            display: none;
+            /* Immer sichtbar: die Sprachwahl soll auch vor der Anmeldung da sein */
+            display: flex;
             gap: 22px;
             justify-content: center;
             align-items: center;
@@ -51,6 +52,9 @@
         }
 
         #mainNav a:hover { text-decoration: underline; }
+
+        /* Links, die eine Anmeldung brauchen, blendet das Skript aus */
+        #mainNav a[hidden] { display: none; }
 
         #langSwitch {
             background: white;
@@ -311,15 +315,15 @@
 <body>
     <nav id="mainNav">
         <span class="brand">Connect</span>
-        <a onclick="showPage('page-home')" data-i18n="nav_home">Home</a>
-        <a onclick="showPage('page-feed')" data-i18n="nav_feed">Feed</a>
-        <a onclick="openOwnProfile()" data-i18n="nav_profile">Profil</a>
+        <a class="nav-auth" hidden onclick="showPage('page-home')" data-i18n="nav_home">Home</a>
+        <a class="nav-auth" hidden onclick="showPage('page-feed')" data-i18n="nav_feed">Feed</a>
+        <a class="nav-auth" hidden onclick="openOwnProfile()" data-i18n="nav_profile">Profil</a>
         <a href="impressum.html" data-i18n="nav_imprint">Impressum</a>
-        <a onclick="logout()" data-i18n="nav_logout">Logout</a>
-        <select id="langSwitch" onchange="changeLanguage(this.value)">
-            <option value="de">DE</option>
-            <option value="en">EN</option>
-            <option value="es">ES</option>
+        <a class="nav-auth" hidden onclick="logout()" data-i18n="nav_logout">Logout</a>
+        <select id="langSwitch" onchange="changeLanguage(this.value)" title="Sprache / Language">
+            <option value="de">Deutsch</option>
+            <option value="en">English</option>
+            <option value="es">Español</option>
         </select>
     </nav>
 
@@ -713,7 +717,10 @@
             } else {
                 localStorage.removeItem(USER_KEY);
             }
-            document.getElementById('mainNav').style.display = currentUser ? 'flex' : 'none';
+            // Navigation bleibt stehen, nur die Links für Angemeldete kommen und gehen
+            document.querySelectorAll('#mainNav .nav-auth').forEach((el) => {
+                el.hidden = !currentUser;
+            });
         }
 
         function clearSession() {
